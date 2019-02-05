@@ -6,7 +6,7 @@
 /*   By: khsadira <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/04 14:32:04 by khsadira          #+#    #+#             */
-/*   Updated: 2019/02/05 14:32:29 by khsadira         ###   ########.fr       */
+/*   Updated: 2019/02/05 15:35:05 by khsadira         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,12 +21,6 @@ typedef struct	s_var
 
 static char				*ft_memfreejoin(char **over, char *buff, size_t bufsize, size_t tmpsize);
 static t_var	var;
-
-static void				ft_memidel(char *buff, size_t size)
-{
-	while (size--)
-		ft_memdel((void **)buff++);
-}
 
 static t_var			init_var(t_var var)
 {
@@ -68,13 +62,8 @@ static size_t			end_of_exclaim(size_t i, size_t j, char **tmp, t_shell *sh)
 
 static char				*replace_exclaim_one(t_shell *sh, char *tmp)
 {
-	char	*buf;
-
-	buf = ft_memalloc(sh->history->bufsize);
-	move_start(sh);
-	buf = ft_memcpy(buf, sh->history->buffer, sh->history->bufsize);
-	var.tmpsize = sh->history->bufsize;
-	tmp = ft_memfreejoin(&tmp, buf, var.bufsize, var.tmpsize);
+	tmp = ft_memfreejoin(&tmp, sh->history->buffer, var.tmpsize, sh->history->bufsize);
+	var.tmpsize += sh->history->bufsize;
 	return (tmp);
 }
 
@@ -86,12 +75,38 @@ static void				replace_exclaim_two(t_shell *sh, size_t i, size_t j, char **tmp)
 	(void)tmp;
 }
 
-static void				replace_exclaim_three(t_shell *sh, size_t i, size_t j, char **tmp)
+static char				*replace_exclaim_three(t_shell *sh, size_t i, size_t j, char *tmp)
 {
-	(void)sh;
-	i++;
-	j++;
-	(void)tmp;
+	size_t		nb;
+	size_t		stock;
+	size_t		start;
+	t_history	*head;
+
+	nb = 0;
+	start = i + 1;
+	stock = j - start;
+	printf("start = %zu\n",start);
+	move_start(sh);
+	printf("taille = %zu\n", stock);
+	move_start(sh);
+	while (stock--)
+	{
+		nb *= 10;
+		nb += (int)(sh->in->buffer[start]) - 48;
+		printf("%d\n", (int)(sh->in->buffer[start]) - 48);
+		start++;
+	}
+//	if (nb > sh->history_size)
+//		return ("ERREUR");
+	head = sh->history;
+	while (sh->history->bfr)
+		sh->history = sh->history->bfr;
+	while (--nb)
+		sh->history = sh->history->next;
+	tmp = ft_memfreejoin(&tmp, sh->history->buffer, var.tmpsize, sh->history->bufsize);
+	var.tmpsize += sh->history->bufsize;
+	sh->history = head;
+	return (tmp);
 }
 
 static char				*ft_memfreejoin(char **s1, char *s2, size_t bufsize, size_t tmpsize)
@@ -103,7 +118,8 @@ static char				*ft_memfreejoin(char **s1, char *s2, size_t bufsize, size_t tmpsi
 		return (NULL);
 	ft_memcpy(tmp, *s1, bufsize);
 	ft_memcpy(tmp + bufsize, s2, tmpsize);
-	ft_memidel(*s1, var.bufsize);
+	if (bufsize > 0)
+		free(*s1);
 	return (tmp);
 }
 
@@ -114,7 +130,7 @@ static char				*replace_exclaim(t_shell *sh, size_t i, size_t j, char *tmp)
 	else if (var.exclaim_type == 2)
 		replace_exclaim_two(sh, i, j, &tmp);
 	else if (var.exclaim_type == 3)
-		replace_exclaim_three(sh, i, j, &tmp);
+		tmp = replace_exclaim_three(sh, i, j, tmp);
 	return (tmp);
 }
 
@@ -143,8 +159,9 @@ void					exclaim(t_shell *sh)
 		tmp = replace_exclaim(sh, i, j, tmp);
 		buff = ft_memfreejoin(&buff, tmp, var.bufsize, var.tmpsize);
 		var.bufsize += var.tmpsize;
-		ft_memidel(tmp, var.tmpsize);
+		free(tmp);
 		var.tmpsize = 0;
+		var.exclaim_type = 0;
 	}
 	move_start(sh);
 	sh->in->buffer = buff;
