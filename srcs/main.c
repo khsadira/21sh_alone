@@ -6,7 +6,7 @@
 /*   By: khsadira <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/15 14:37:05 by khsadira          #+#    #+#             */
-/*   Updated: 2019/02/05 11:46:02 by khsadira         ###   ########.fr       */
+/*   Updated: 2019/02/07 14:59:00 by khsadira         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ int			main(int ac, char **av, char **env)
 	sh = init_shell(ac, av, env);
 	while (42)
 	{
+		printf("here\n");
 		signal(SIGINT, ft_signal);
 		//signal(SIGSEGV, ft_signal);
 		//signal(SIGABRT, ft_signal);

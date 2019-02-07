@@ -6,7 +6,7 @@
 /*   By: khsadira <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/04 14:32:04 by khsadira          #+#    #+#             */
-/*   Updated: 2019/02/05 15:35:05 by khsadira         ###   ########.fr       */
+/*   Updated: 2019/02/07 17:59:41 by khsadira         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,12 +67,37 @@ static char				*replace_exclaim_one(t_shell *sh, char *tmp)
 	return (tmp);
 }
 
-static void				replace_exclaim_two(t_shell *sh, size_t i, size_t j, char **tmp)
+static char				*replace_exclaim_two(t_shell *sh, size_t i, size_t j, char *tmp)
 {
-	(void)sh;
+	size_t	stock;
+	size_t	a;
+	t_history	*tmp_hist;
+
 	i++;
-	j++;
-	(void)tmp;
+	tmp_hist = sh->history;
+	if (j != '!')
+		j++;
+	while (tmp_hist)
+	{
+		if (sh->in->buffer[i] == tmp_hist->buffer[0])
+		{
+			stock = i;
+			a = 0;
+			while (stock - i <= sh->in->bufsize && a <= tmp_hist->bufsize && sh->in->buffer[stock] == tmp_hist->buffer[a])
+			{
+				a++;
+				stock++; 
+			}
+			if (a >= tmp_hist->bufsize)
+			{
+				tmp = ft_memfreejoin(&tmp, tmp_hist->buffer, var.tmpsize, tmp_hist->bufsize);
+				var.tmpsize += tmp_hist->bufsize;
+				return (tmp);
+			}
+		}
+		tmp_hist = tmp_hist->next;
+	}
+	return (tmp);
 }
 
 static char				*replace_exclaim_three(t_shell *sh, size_t i, size_t j, char *tmp)
@@ -128,7 +153,7 @@ static char				*replace_exclaim(t_shell *sh, size_t i, size_t j, char *tmp)
 	if (var.exclaim_type == 1)
 		tmp = replace_exclaim_one(sh, tmp);
 	else if (var.exclaim_type == 2)
-		replace_exclaim_two(sh, i, j, &tmp);
+		tmp = replace_exclaim_two(sh, i, j, tmp);
 	else if (var.exclaim_type == 3)
 		tmp = replace_exclaim_three(sh, i, j, tmp);
 	return (tmp);
