@@ -6,7 +6,7 @@
 /*   By: khsadira <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/04 14:32:04 by khsadira          #+#    #+#             */
-/*   Updated: 2019/02/07 17:59:41 by khsadira         ###   ########.fr       */
+/*   Updated: 2019/02/08 18:53:05 by khsadira         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,35 +67,51 @@ static char				*replace_exclaim_one(t_shell *sh, char *tmp)
 	return (tmp);
 }
 
+static int				looking_for_similar(char *s1, t_history *hist, size_t i, size_t j)
+{
+	size_t	taille;
+	size_t	k;
+
+	k = 0;
+	printf("%zu\n", hist->bufsize);
+	ft_putendl(hist->buffer);
+	printf("%zu | %zu\n", j, i);
+	ft_putendl(s1);
+	taille = j - i;
+	while (k < hist->bufsize && i < j)
+	{
+		if (s1[i] != hist->buffer[k])
+			return (0);
+		k++;
+		i++;
+	}
+	printf("%zu | %zu\n", k, hist->bufsize);
+	if (k >= hist->bufsize)
+		return (1);
+	return (0);
+}
+
 static char				*replace_exclaim_two(t_shell *sh, size_t i, size_t j, char *tmp)
 {
-	size_t	stock;
-	size_t	a;
 	t_history	*tmp_hist;
 
 	i++;
 	tmp_hist = sh->history;
-	if (j != '!')
-		j++;
 	while (tmp_hist)
 	{
 		if (sh->in->buffer[i] == tmp_hist->buffer[0])
 		{
-			stock = i;
-			a = 0;
-			while (stock - i <= sh->in->bufsize && a <= tmp_hist->bufsize && sh->in->buffer[stock] == tmp_hist->buffer[a])
+			ft_putstr("here\n");
+			move_start(sh);
+			if (looking_for_similar(sh->in->buffer, tmp_hist, i, j))
 			{
-				a++;
-				stock++; 
-			}
-			if (a >= tmp_hist->bufsize)
-			{
+				ft_putstr("here2\n");
 				tmp = ft_memfreejoin(&tmp, tmp_hist->buffer, var.tmpsize, tmp_hist->bufsize);
 				var.tmpsize += tmp_hist->bufsize;
 				return (tmp);
 			}
 		}
-		tmp_hist = tmp_hist->next;
+		tmp_hist = tmp_hist->bfr;
 	}
 	return (tmp);
 }
@@ -110,15 +126,11 @@ static char				*replace_exclaim_three(t_shell *sh, size_t i, size_t j, char *tmp
 	nb = 0;
 	start = i + 1;
 	stock = j - start;
-	printf("start = %zu\n",start);
-	move_start(sh);
-	printf("taille = %zu\n", stock);
 	move_start(sh);
 	while (stock--)
 	{
 		nb *= 10;
 		nb += (int)(sh->in->buffer[start]) - 48;
-		printf("%d\n", (int)(sh->in->buffer[start]) - 48);
 		start++;
 	}
 //	if (nb > sh->history_size)
@@ -172,7 +184,6 @@ void					exclaim(t_shell *sh)
 	while (i < sh->in->bufsize && j < sh->in->bufsize)
 	{
 		move_start(sh);
-		ft_putstr("here\n");
 		move_start(sh);
 		i = j;
 		while (i < sh->in->bufsize && sh->in->buffer[i] != '!')
@@ -180,11 +191,12 @@ void					exclaim(t_shell *sh)
 //		if (!(i < sh->in->bufsize))
 //			break;
 		j = end_of_exclaim(i, j, &tmp, sh);
-		move_start(sh);
 		tmp = replace_exclaim(sh, i, j, tmp);
-		buff = ft_memfreejoin(&buff, tmp, var.bufsize, var.tmpsize);
-		var.bufsize += var.tmpsize;
-		free(tmp);
+		if (var.tmpsize > 0)
+		{
+			buff = ft_memfreejoin(&buff, tmp, var.bufsize, var.tmpsize);
+			var.bufsize += var.tmpsize;
+		}
 		var.tmpsize = 0;
 		var.exclaim_type = 0;
 	}
